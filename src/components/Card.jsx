@@ -1,34 +1,39 @@
-import propTypes from "prop-types"
+import propTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import spinner from "./loader/spinner.mov.gif";
 
-function Card ({title, imagePath, articleUri}) {
-    return(
-        <div>
-            <Link to={`/articleDetails/${articleUri}`} key={articleUri}>
-                <section className="mb-4">
-                    <article className="shadow rounded-md min-h-60 hover:bg-slate-200 hover:scale-105 duration-300 lg:max-w-xl dark:bg-gray-700 dark:text-slate-200 dark:hover:bg-gray-600">
-                        <div className="flex items-center justify-center">  
-                            <LazyLoadImage src={imagePath} alt={title} placeholderSrc={spinner} className="rounded rounded-b-none w-full object-cover min-w-80 min-h-48" />
-                        </div>
-                        <div>
-                            <h3 className="text-sm p-2">
-                                {title}
-                            </h3>
-                        </div>
-                    </article>
-                </section>
-            </Link>
+function Card({ title, imagePath, articleUri }) {
+  return (
+    <Link to={`/articleDetails/${articleUri}`} key={articleUri}>
+      <article
+        className="group bg-white dark:bg-gray-700 hover:dark:bg-gray-600 hover:bg-slate-100 transition-all duration-300 
+                   rounded-xl shadow-md hover:shadow-xl overflow-hidden transform hover:scale-[1.03] min-h-[260px] flex flex-col justify-between"
+      >
+        <div className="w-full h-48 overflow-hidden">
+          <LazyLoadImage
+            src={imagePath}
+            alt={title}
+            placeholderSrc={spinner}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
         </div>
-    )
-}
 
-export default Card;
+        <div className="p-4">
+          <h3 className="text-sm font-medium text-gray-800 dark:text-slate-100 group-hover:text-blue-500 transition-colors duration-200">
+            {title.length > 120 ? `${title.slice(0, 117)}...` : title}
+          </h3>
+        </div>
+      </article>
+    </Link>
+  );
+}
 
 Card.propTypes = {
-    articleUri: propTypes.string.isRequired,
-    title: propTypes.string.isRequired,
-    imagePath: propTypes.string.isRequired,
-    body: propTypes.string.isRequired
-}
+  articleUri: propTypes.string.isRequired,
+  title: propTypes.string.isRequired,
+  imagePath: propTypes.string.isRequired,
+  body: propTypes.string, // optional, you can still pass it
+};
+
+export default Card;

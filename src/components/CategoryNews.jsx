@@ -1,5 +1,5 @@
 import { useGetCategoryNewsQuery } from "../API/apiSlice";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Card from "./Card";
 import Pagination from "./Pagination";
 import CategoryLinks from "./CategoryLinks";
@@ -9,104 +9,131 @@ import MiniCard from "./MiniCard";
 import SpinnerLoader from "./loader/SpinnerLoader";
 
 function CategoryNews() {
+  const getCategory = useParams();
+  const categories = NEWS_CATEGORIES;
 
-    const getCategory  = useParams(); //Obtain the category selected by the user
-    const categories = NEWS_CATEGORIES;
+  // Obtener el URI según la categoría seleccionada
+  const fetchCategory = (getCategory, categories) => {
+    return categories.find(
+      (category) => category.label === `news/${getCategory.category}`
+    )?.uri;
+  };
 
-    const fetchCategory = ( getCategory, categories ) => {
-        /*This function takes as parameters the category selected by the user (getCategory)
-        and the news categories (categories) and returns the uri of the selected category */
-        let category = 0;
-        for (category; category < categories.length; category++) {
-            if (categories[category].label === `news/${getCategory.category}`) {
-                return categories[category].uri;
-            }
-        }
-    }
-    const categoryUri = fetchCategory(getCategory, categories);
-    //console.log("categoryUri:", categoryUri);
-    // Get the data from the API based on the category selected by the user
-    const { data, error, isLoading } = useGetCategoryNewsQuery(categoryUri);
-    //console.log("Data:", data);
-    const articles = data?.articles.results || [];
+  const categoryUri = fetchCategory(getCategory, categories);
+  const { data, error, isLoading } = useGetCategoryNewsQuery(categoryUri);
 
+  const articles = data?.articles.results || [];
+  const totalResults = data?.articles?.totalResults || 0;
 
-    const totalResults = data?.articles?.totalResults || 0;
-    const [currentPage, setCurrentPage] = useState(1);
-    const newsPerPage = 8;
-    // Calc of total pages
-    const totalPageNews = Math.ceil(totalResults / newsPerPage);
-    // Calcul of the articles to show in the current page  
-    const indexOfLastArticle = currentPage * newsPerPage;
-    const indexOfFirstArticle = indexOfLastArticle - newsPerPage;
-    const Articles = articles.slice(indexOfFirstArticle, indexOfLastArticle);
+  const [currentPage, setCurrentPage] = useState(1);
+  const newsPerPage = 14;
+  const totalPageNews = Math.ceil(totalResults / newsPerPage);
+  const indexOfLastArticle = currentPage * newsPerPage;
+  const indexOfFirstArticle = indexOfLastArticle - newsPerPage;
 
-    const nextPage = () => {
-        if (currentPage < totalPageNews) {
-            setCurrentPage(currentPage + 1);
-            setSuggestedArticles(suggestedArticlesIndex + suggestedPerPage);
-        }
-    };
+  const Articles = useMemo(() => {
+    return articles.slice(indexOfFirstArticle, indexOfLastArticle);
+  }, [articles, indexOfFirstArticle, indexOfLastArticle]);
 
-    const prevPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage(currentPage - 1);
-            setSuggestedArticles(suggestedArticlesIndex - suggestedPerPage);
-        }
-    };
+  const suggestedPerPage = 8;
+  const [suggestedArticlesIndex, setSuggestedArticles] = useState(30);
 
-    //Suggestions
-    const suggestedPerPage = 12;
-    const [suggestedArticlesIndex, setSuggestedArticles] = useState(30);
-    const suggestArticles = articles.slice(suggestedArticlesIndex, suggestedArticlesIndex + suggestedPerPage);
-
-    if (isLoading && document.querySelector('html').classList == "dark") {
-        return <SpinnerLoader/>
-    }
-    if (error) {
-        return <h3>Error: {error.message}</h3>;
-    }
-
-    return (
-        <div className="dark:bg-gray-900 flex lg:flex-row justify-evenly p-6 lg:p-0">
-            <CategoryLinks />
-            <div className="mx-auto lg:items-center lg:flex flex-col dark:text-slate-200  pt-6">
-            <div className="w-full font-bold pb-10 text-center">
-                    <h3 className="w-full hover:scale-110 duration-200">{getCategory.category}</h3>
-                </div>
-                <div>
-                    {Articles.map((article) => (
-                        <Card
-                            key={article.uri}
-                            articleUri={article.uri}
-                            title={article.title}
-                            imagePath={article.image}
-                            body={article.body}
-                            categoryUri={article.categoryUri}
-                        />
-                    ))}
-                </div>
-                <Pagination
-                    prevPage={prevPage}
-                    currentPage={currentPage}
-                    totalPageNews={totalPageNews}
-                    nextPage={nextPage}
-                />
-            </div>
-            <div className="w-80 hidden lg:block border-l border-slate-200  dark:text-slate-200">
-                <h3 className="w-full font-bold pb-10 text-center mt-5">Suggestions</h3>
-                {suggestArticles.map((article) => (
-                    <MiniCard
-                    key={article.uri}
-                    articleUri={article.uri}
-                    title={article.title}
-                    imagePath={article.image}
-                    />
-                    )
-                )}
-            </div>
-        </div>
+  const suggestArticles = useMemo(() => {
+    return articles.slice(
+      suggestedArticlesIndex,
+      suggestedArticlesIndex + suggestedPerPage
     );
+  }, [articles, suggestedArticlesIndex]);
+
+  const nextPage = () => {
+    if (currentPage < totalPageNews) {
+      setCurrentPage(currentPage + 1);
+      setSuggestedArticles(suggestedArticlesIndex + suggestedPerPage);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      setSuggestedArticles(suggestedArticlesIndex - suggestedPerPage);
+    }
+  };
+
+  // Cambiar el título de la pestaña
+  useEffect(() => {
+    if (getCategory.category) {
+      document.title = `${getCategory.category.replace("-", " ")} | News db`;
+    }
+  }, [getCategory]);
+
+  if (isLoading) return <SpinnerLoader />;
+  if (error)
+    return (
+      <h3 className="text-red-500 text-center mt-6">
+        Error: {error.message}
+      </h3>
+    );
+
+  return (
+    <div className="min-h-screen flex flex-col lg:flex-row justify-between gap-10 
+      bg-white dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-700 dark:to-gray-900
+      text-gray-900 dark:text-white transition-colors duration-300">
+      
+      <CategoryLinks />
+
+      <main className="flex-1 lg:p-10 p-4 lg:pr-0 lg:pl-6 animate-fade-in">
+        <div className="text-center mb-8">
+          <h3 className="text-3xl font-bold text-blue-400 hover:scale-105 transition-transform duration-200 capitalize">
+            {getCategory.category.replace("-", " ")}
+          </h3>
+        </div>
+
+        {Articles.length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400">
+            No articles found.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 ">
+            {Articles.map((article) => (
+              <Card
+                key={article.uri}
+                articleUri={article.uri}
+                title={article.title}
+                imagePath={article.image}
+                body={article.body}
+                categoryUri={article.categoryUri}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-10">
+          <Pagination
+            prevPage={prevPage}
+            currentPage={currentPage}
+            totalPageNews={totalPageNews}
+            nextPage={nextPage}
+          />
+        </div>
+      </main>
+
+      <aside className="w-full lg:w-[300px] border-t lg:border-t-0 lg:border-l border-gray-300 dark:border-gray-700 pl-6 bg-white dark:bg-gray-900 shadow-md">
+        <h3 className="text-xl font-semibold text-center text-blue-400 mb-6">
+          Suggestions
+        </h3>
+        <div className="flex flex-col gap-4">
+          {suggestArticles.map((article) => (
+            <MiniCard
+              key={article.uri}
+              articleUri={article.uri}
+              title={article.title}
+              imagePath={article.image}
+            />
+          ))}
+        </div>
+      </aside>
+    </div>
+  );
 }
 
 export default CategoryNews;

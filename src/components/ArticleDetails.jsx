@@ -3,42 +3,44 @@ import { useGetArticleDetailsQuery } from "../API/apiSlice";
 import CategoryLinks from "./CategoryLinks";
 import SpinnerLoader from "./loader/SpinnerLoader";
 
-
 function ArticleDetails() {
-    const getArticleUri = useParams();
-    const articleUri = getArticleUri.articleUri;
+  const { articleUri } = useParams();
+  const { data, error, isLoading } = useGetArticleDetailsQuery(articleUri);
 
-    const { data, error, isLoading } = useGetArticleDetailsQuery(articleUri);
-    console.log("Data:", data);
+  if (isLoading) return <SpinnerLoader />;
+  if (error) return <h3 className="text-red-500 text-center mt-6">Error loading article</h3>;
 
-    if (isLoading) {
-        return <SpinnerLoader />;
-    }
+  const articleKey = Object.keys(data)[0] || "";
+  const article = data?.[articleKey].info || {};
 
-    if (error) {
-        return <h3>Error...</h3>;
-    }
+  return (
+    <div className="bg-white dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-700 dark:to-gray-900
+    min-h-screen text-white flex flex-col lg:flex-row lg:justify-between p-6 lg:p-10">
 
-    const articleKey = Object.keys(data)[0] || ""; //Obtain the key of the object that contains the article data
-    const article = data?.[articleKey].info || {}; //Obtain the article data
-    //console.log("Article:", article);
+      <main className="flex-1 max-w-4xl mx-auto px-2 animate-fade-in">
+        <h2 className="text-3xl font-bold text-blue-400 mb-6 hover:scale-105 transition-transform duration-300">
+          {article.title}
+        </h2>
 
-    return (
-        <div className="dark:bg-gray-900 flex lg:flex-row lg:justify-evenly p-6 lg:p-0">
-            <CategoryLinks />
-            <div className="lg:items-center lg:flex flex-col dark:text-slate-200  lg:px-40">
-                <h2 className="py-10 font-bold hover:scale-110 duration-200">{article.title}</h2>
-                <img src={article.image} alt={article.title} className="rounded rounded-b-none w-full object-cover"/>
-                <p className="py-10 text-justify">{article.body}</p>
-                <div className="py-10 text-sm">
-                    <span>Source: {article.source.title}  {article.source.uri}</span>
-                    <br />
-                    <span>Date: {article.time} </span>
-                    <br />
-                </div>
-            </div>
+        <div className="overflow-hidden rounded-xl shadow-lg mb-6">
+          <img
+            src={article.image}
+            alt={article.title}
+            className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+          />
         </div>
-    )
+
+        <p className="text-justify text-base leading-relaxed text-gray-900 dark:text-slate-200 mb-10">
+          {article.body}
+        </p>
+
+        <div className="text-sm text-gray-400">
+          <p><strong>Source:</strong> {article.source?.title} – {article.source?.uri}</p>
+          <p><strong>Date:</strong> {article.time}</p>
+        </div>
+      </main>
+    </div>
+  );
 }
 
 export default ArticleDetails;

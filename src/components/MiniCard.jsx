@@ -14,7 +14,7 @@ function MiniCard ({title, imagePath, articleUri}){
                             <LazyLoadImage src={imagePath} alt={title} placeholderSrc={spinner} className="rounded rounded-b-none w-full object-cover min-h-35"/>
                         </div>
                         <div>
-                            <h3 className="text-sm p-2">
+                            <h3 className="text-sm p-2 text-gray-900 dark:text-slate-200 font-semibold text-center hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200">
                                 {title}
                             </h3>
                         </div>
